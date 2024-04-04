@@ -6,7 +6,7 @@
     resource_group: "{{ resource_group_name }}"
     resource_group_secondary: "{{ resource_group_name }}2"
     resource_name: mySubNet
-    location: eastus
+    location: eastus2
   tasks:
     - name: Create a resource group
       azure_rm_resourcegroup:
