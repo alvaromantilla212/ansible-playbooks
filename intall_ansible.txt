@@ -1,0 +1,238 @@
+https://learn.microsoft.com/en-us/azure/developer/ansible/install-on-linux-vm?tabs=azure-cli
+
+
+In this article
+Prerequisites
+Create a virtual machine
+Connect to your virtual machine via SSH
+Install Ansible on the virtual machine
+Create Azure credentials
+Test Ansible installation
+Next steps
+Show less
+ Caution
+
+This article references CentOS, a Linux distribution that is nearing End Of Life (EOL) status. Please consider your use and plan accordingly. For more information, see the CentOS End Of Life guidance.
+
+This article shows how to install Ansible on a Centos VM in Azure.
+
+In this article, you learn how to:
+
+Create a resource group
+Create a CentOS virtual machine
+Install Ansible on the virtual machine
+Connect to the virtual machine via SSH
+Configure Ansible on the virtual machine
+Prerequisites
+Azure subscription: If you don't have an Azure subscription, create a free account before you begin.
+Azure service principal: Create a service principal, making note of the following values: appId, displayName, password, and tenant.
+Create a virtual machine
+Create an Azure resource group.
+
+Azure CLI
+Azure PowerShell
+Azure CLI
+
+Copy
+az group create --name QuickstartAnsible-rg --location eastus
+You might need to replace the --location parameter with the appropriate value for your environment.
+
+Create the Azure virtual machine for Ansible.
+
+Azure CLI
+Azure PowerShell
+Azure CLI
+
+Copy
+az vm create \
+--resource-group QuickstartAnsible-rg \
+--name QuickstartAnsible-vm \
+--image CentOS85Gen2 \
+--admin-username azureuser \
+--admin-password <password>
+Replace the <password> your password.
+
+Get the public Ip address of the Azure virtual machine.
+
+Azure CLI
+Azure PowerShell
+Azure CLI
+
+Copy
+az vm show -d -g QuickstartAnsible-rg -n QuickstartAnsible-vm --query publicIps -o tsv
+Connect to your virtual machine via SSH
+Using the SSH command, connect to your virtual machine's public IP address.
+
+Azure CLI
+
+Copy
+ssh azureuser@<vm_ip_address>
+Replace the <vm_ip_address> with the appropriate value returned in previous commands.
+
+Install Ansible on the virtual machine
+Ansible 2.9 with the azure_rm module
+Run the following commands to configure Ansible 2.9 on Centos:
+
+Bash
+
+Copy
+#!/bin/bash
+
+# Update all packages that have available updates.
+sudo yum update -y
+
+# Install Python 3 and pip.
+sudo yum install -y python3-pip
+
+# Upgrade pip3.
+sudo pip3 install --upgrade pip
+
+# Install Ansible.
+pip3 install "ansible==2.9.17"
+
+# Install Ansible azure_rm module for interacting with Azure.
+pip3 install ansible[azure]
+Ansible 2.10 with azure.azcollection
+Run the following commands to configure Ansible on Centos:
+
+Bash
+
+Copy
+#!/bin/bash
+
+# Update all packages that have available updates.
+sudo yum update -y
+
+# Install Python 3 and pip.
+sudo yum install -y python3-pip
+
+# Upgrade pip3.
+sudo pip3 install --upgrade pip
+
+# Install Ansible az collection for interacting with Azure.
+ansible-galaxy collection install azure.azcollection
+
+# Install Ansible modules for Azure
+sudo pip3 install -r ~/.ansible/collections/ansible_collections/azure/azcollection/requirements-azure.txt
+Key points:
+
+Ansible control node requires Python 2 (version 2.7) or Python 3 (versions 3.5 and higher) installed. Ansible 4.0.0 and ansible-core 2.11 has a soft dependency on Python 3.8, but functions with lower versions. However, Ansible 5.0.0 and ansible-core 2.12 will require 3.8 and newer.
+Create Azure credentials
+To configure the Ansible credentials, you need the following information:
+
+Your Azure subscription ID and tenant ID
+The service principal application ID and secret
+Configure the Ansible credentials using one of the following techniques:
+
+Option 1: Create an Ansible credentials file
+Option 2: Define Ansible environment variables
+Option 1: Create Ansible credentials file
+In this section, you create a local credentials file to provide credentials to Ansible. For security reasons, credential files should only be used in development environments.
+
+For more information about defining Ansible credentials, see Providing Credentials to Azure Modules.
+
+Once you've successfully connected to the host virtual machine, create and open a file named credentials:
+
+Bash
+
+Copy
+mkdir ~/.azure
+vi ~/.azure/credentials
+Insert the following lines into the file. Replace the placeholders with the service principal values.
+
+Bash
+
+Copy
+[default]
+subscription_id=<subscription_id>
+client_id=<service_principal_app_id>
+secret=<service_principal_password>
+tenant=<service_principal_tenant_id>
+Save and close the file.
+
+Option 2: Define Ansible environment variables
+On the host virtual machine, export the service principal values to configure your Ansible credentials.
+
+Bash
+
+Copy
+export AZURE_SUBSCRIPTION_ID=<subscription_id>
+export AZURE_CLIENT_ID=<service_principal_app_id>
+export AZURE_SECRET=<service_principal_password>
+export AZURE_TENANT=<service_principal_tenant_id>
+Test Ansible installation
+You now have a virtual machine with Ansible installed and configured!
+
+This section shows how to create a test resource group within your new Ansible configuration. If you don't need to do that, you can skip this section.
+
+Option 1: Use an ad-hoc ansible command
+Option 2: Write and run an Ansible playbook
+Option 1: Use an ad-hoc ansible command
+Run the following ad-hoc Ansible command to create a resource group:
+
+Bash
+
+Copy
+#Ansible 2.9 with azure_rm module
+ansible localhost -m azure_rm_resourcegroup -a "name=ansible-test location=eastus"
+
+#Ansible 2.10 with azure.azcollection
+ansible localhost -m azure.azcollection.azure_rm_resourcegroup -a "name=<resource_group_name> location=<location>"
+Replace <resource_group_name> and <location> with your values.
+
+Option 2: Write and run an Ansible playbook
+Save the following code as create_rg.yml.
+
+Ansible 2.9 with azure_rm module
+
+yml
+
+Copy
+---
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Creating resource group
+      azure_rm_resourcegroup:
+        name: "<resource_group_name"
+        location: "<location>"
+Ansible 2.10 with azure.azcollection
+
+yml
+
+Copy
+- hosts: localhost
+  connection: local
+  collections:
+    - azure.azcollection
+  tasks:
+    - name: Creating resource group
+      azure_rm_resourcegroup:
+        name: "<resource_group_name"
+        location: "<location>"
+Replace <resource_group_name> and <location> with your values.
+
+Run the playbook using ansible-playbook.
+
+Bash
+
+Copy
+ansible-playbook create_rg.yml
+Read more about the azure.azcollection.
+
+Clean up resources
+Ansible
+Azure CLI
+Azure PowerShell
+Run az group delete to delete the resource group. All resources within the resource group will be deleted.
+
+Azure CLI
+
+Copy
+az group delete --name <resource_group>
+Verify that the resource group was deleted by using az group show.
+
+Azure CLI
+
+Copy
+az group show --name <resource_group>
