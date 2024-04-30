@@ -1,0 +1,20 @@
+---
+- name: Create NSX-T Security Policy
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Create Security Policy
+      nsxt_policy_security_policy:
+        display_name: MySecurityPolicy
+        rules:
+          - name: Allow HTTP
+            action: ALLOW
+            sources:
+              - segments:
+                  - /infra/segments/SegmentA
+            destinations:
+              - segments:
+                  - /infra/segments/SegmentB
+            services:
+              - /infra/services/HTTP
+      delegate_to: localhost

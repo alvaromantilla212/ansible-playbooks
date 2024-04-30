@@ -1,0 +1,33 @@
+Ansible uses Jinja2 templating to enable dynamic expressions and access to variables and facts. You can utilize templating with the template module to create dynamic configurations. Here’s how you can use Ansible facts in Jinja templates:
+Create a Jinja2 Template:
+First, create a Jinja2 template file (e.g., my_template.j2). This file will contain placeholders for variables and facts.
+For example, let’s say you want to write the server hostname to a file. Your template might look like this:
+My name is {{ ansible_facts['hostname'] }}
+
+Use the template Module:
+In your Ansible playbook, include a task that uses the template module to render your Jinja template.
+For instance:
+- name: Write hostname using Jinja2
+  ansible.builtin.template:
+    src: templates/my_template.j2
+    dest: /tmp/hostname
+
+Access Facts in the Template:
+Inside the Jinja2 template, you can access Ansible facts using the ansible_facts dictionary.
+In the example above, {{ ansible_facts['hostname'] }} retrieves the hostname of the managed server.
+Additional Tips:
+You can use all the standard filters and tests included in Jinja2.
+Ansible also provides specialized filters and lookup plugins for more advanced data manipulation and retrieval.
+Remember that all templating happens on the Ansible control node before executing tasks on the target machine.
+Here’s a simple example playbook demonstrating the usage:
+---
+- name: Write hostname
+  hosts: all
+  tasks:
+    - name: Write hostname using Jinja2
+      ansible.builtin.template:
+        src: templates/my_template.j2
+        dest: /tmp/hostname
+
+In the my_template.j2 file, the hostname will be dynamically replaced with the actual hostname of the target server.
+Remember to replace placeholders ({{ ... }}) with actual values specific to your environment. Jinja2 templates allow you to create flexible and customized configurations based on facts and variables11223344.

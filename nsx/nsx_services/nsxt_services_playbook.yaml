@@ -1,0 +1,23 @@
+---
+- name: Create NSX-T Firewall Rules
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Create firewall rule for Ubuntu VMs
+      nsxt_firewall_rule:
+        hostname: "{{ nsx_manager }}"
+        username: "{{ nsx_username }}"
+        password: "{{ nsx_password }}"
+        display_name: "Allow Ubuntu VMs to external Apt repo"
+        section: "default"
+        state: present
+        rules:
+          - name: "Allow HTTPS-Alt from Ubuntu VMs"
+            action: "ALLOW"
+            source_groups:
+              - "ubuntu_vms"
+            destination_groups:
+              - "repos_for_ubuntu"
+            services:
+              - "HTTPS-Alt"
+      delegate_to: localhost

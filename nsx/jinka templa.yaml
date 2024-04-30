@@ -1,0 +1,42 @@
+my_role/
+├── tasks/
+│   └── main.yml
+├── templates/
+│   └── my_template.j2
+└── vars/
+    └── main.yml
+ the templates directory, create a Jinja2 template file (e.g., my_template.j2).
+This file will contain dynamic content that you want to generate during playbook execution.
+For example, let’s say you want to create an Nginx configuration file dynamically.
+Example: Nginx Configuration:
+Suppose you want to generate an Nginx configuration file with variables for server name and port.
+=======================
+Create my_template.j2 with the following content:
+=======================
+server {
+    listen {{ nginx_port }};
+    server_name {{ nginx_server_name }};
+    # Other Nginx configuration...
+}
+=======================
+Use the Template in Your Role:
+In your tasks/main.yml, use the template module to deploy the generated configuration file:
+=======================
+---
+- name: Deploy Nginx configuration
+  hosts: localhost
+  tasks:
+    - name: Generate Nginx config
+      ansible.builtin.template:
+        src: my_template.j2
+        dest: /etc/nginx/nginx.conf
+      vars:
+        nginx_port: 80
+        nginx_server_name: myserver.com
+=======================
+Run Your Playbook:
+Execute your playbook that includes this role:
+ansible-playbook my_nginx_playbook.yml
+=======================
+Dynamic Content:
+During playbook execution, Ansible will replace the variables ({{ nginx_port }} and {{ nginx_server_name }}) with the values you provide in your playbook or inventory.

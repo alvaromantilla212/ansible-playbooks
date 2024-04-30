@@ -1,0 +1,115 @@
+# Ansible role to create an NSX-T segment, add subnets, and configure firewall rules using Jinja templates
+
+---
+
+# Create NSX-T segment
+- name: Create NSX-T segment
+  nsxt_segment:
+    hostname: "{{ nsxt_manager }}"
+    username: "{{ nsxt_username }}"
+    password: "{{ nsxt_password }}"
+    validate_certs: no
+    display_name: "{{ segment_name }}"
+    transport_zone: "{{ transport_zone }}"
+  delegate_to: localhost
+  register: segment_result
+
+# Add subnets to the segment
+- name: Add subnets to NSX-T segment
+  nsxt_segment_subnet:
+    hostname: "{{ nsxt_manager }}"
+    username: "{{ nsxt_username }}"
+    password: "{{ nsxt_password }}"
+    validate_certs: no
+    segment_id: "{{ segment_result.segment.id }}"
+    subnets:
+      - gateway_ip: "{{ subnet_gateway }}"
+        prefix_length: "{{ subnet_prefix_length }}"
+  delegate_to: localhost
+
+# Configure firewall rules using Jinja templates
+- name: Configure firewall rules
+  template:
+    src: "{{ item.src }}"
+    dest: "/etc/nsx-t/firewall_rules/{{ item.name }}.json"
+  with_items:
+    - { name: "allow-http", src: "templates/allow-http.j2" }
+    - { name: "allow-https", src: "templates/allow-https.j2" }
+    - { name: "deny-all", src: "templates/deny-all.j2" }
+
+# Apply firewall rules
+- name: Apply firewall rules
+  nsxt_firewall_rule:
+    hostname: "{{ nsxt_manager }}"
+    username: "{{ nsxt_username }}"
+    password: "{{ nsxt_password }}"
+    validate_certs: no
+    state: present
+    rule_id: "{{ item.name }}"
+    rule_file: "/etc/nsx-t/firewall_rules/{{ item.name }}.json"
+  with_items:
+    - { name: "allow-http" }
+    - { name: "allow-https" }
+    - { name: "deny-all" }
+  delegate_to: localhost
+
+
+#Please replace the placeholders ({{ ... }}) with actual values specific to your environment. Additionally, create the necessary Jinja templates for your firewall rules (e.g., allow-http.j2, allow-https.j2, and deny-all.j2).
+=========================
+SSH Rule (allow-ssh.j2):
+=========================
+{
+  "name": "allow-ssh",
+  "action": "ALLOW",
+  "source": {
+    "ip_addresses": [
+      "{{ ssh_allowed_ip }}"
+    ]
+  },
+  "destination": {
+    "port": 22
+  }
+}
+=========================
+DNS Rule (allow-dns.j2):
+{
+  "name": "allow-dns",
+  "action": "ALLOW",
+  "source": {
+    "ip_addresses": [
+      "{{ dns_allowed_ip }}"
+    ]
+  },
+  "destination": {
+    "port": 53
+  }
+}
+=========================
+DHCP Rule (allow-dhcp.j2):
+{
+  "name": "allow-dhcp",
+  "action": "ALLOW",
+  "source": {
+    "ip_addresses": [
+      "{{ dhcp_allowed_ip }}"
+    ]
+  },
+  "destination": {
+    "port": 67
+  }
+}
+=========================
+NFS Rule (allow-nfs.j2):
+{
+  "name": "allow-nfs",
+  "action": "ALLOW",
+  "source": {
+    "ip_addresses": [
+      "{{ nfs_allowed_ip }}"
+    ]
+  },
+  "destination": {
+    "port": 2049
+  }
+}
+#Remember to replace the placeholders ({{ ... }}) with actual values specific to your environment. These templates assume that you have defined the allowed IP addresses for each service (SSH, DNS, DHCP, and NFS).

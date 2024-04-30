@@ -1,0 +1,21 @@
+Create an NSX-T segment.
+Add subnets to the segment.
+Configure firewall rules and policies.
+
+---
+- name: Deploy NSX-T Segment
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Create NSX-T Segment
+      nsxt_policy_segment:
+        display_name: MySegment
+        transport_zone_path: /infra/sites/default/enforcement-points/default/transport-zones/MyTZ
+        subnets:
+          - gateway_ip: 192.168.1.1
+            prefix_length: 24
+          - gateway_ip: 10.0.0.1
+            prefix_length: 16
+      delegate_to: localhost
+
+    # Add more tasks here for firewall rules, policies, etc.
